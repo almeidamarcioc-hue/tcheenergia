@@ -1,0 +1,5 @@
+{
+  "version": 2,
+  "builds": [{"src": "gestor_financeiro_app.py", "use": "@vercel/python"}],
+  "routes": [{"src": "/(.*)", "dest": "gestor_financeiro_app.py"}]
+}
