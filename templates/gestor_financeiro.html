@@ -385,12 +385,196 @@
         /* valor positivo / negativo */
         .valor-positivo { color: #22c55e; font-weight: 700; }
         .valor-negativo { color: #ef4444; font-weight: 700; }
+
+/* ===== MOBILE HEADER ===== */
+.mobile-header {
+    display: none;
+    align-items: center;
+    background: #0e1e3a;
+    padding: 12px 16px;
+    gap: 12px;
+    flex-shrink: 0;
+    z-index: 200;
+}
+.mobile-header .mob-logo-name { color: white; font-size: 1em; font-weight: 800; }
+.mobile-header .mob-logo-tagline { color: rgba(255,255,255,0.45); font-size: 0.7em; }
+.hamburger-btn {
+    background: transparent;
+    border: none;
+    padding: 6px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    flex-shrink: 0;
+}
+.hamburger-btn:hover { background: transparent; transform: none; box-shadow: none; }
+.hamburger-btn span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: white;
+    border-radius: 2px;
+    transition: all 0.25s;
+}
+.mob-logo-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.mob-logo-badge img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ===== SIDEBAR OVERLAY (mobile) ===== */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 998;
+}
+.sidebar-overlay.visible { display: block; }
+
+/* ===== MOBILE CLOSE BUTTON inside sidebar ===== */
+.sidebar-close-btn {
+    display: none;
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: white;
+    font-size: 1.1em;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    line-height: 1;
+}
+.sidebar-close-btn:hover { background: rgba(255,255,255,0.2); transform: none; box-shadow: none; }
+
+/* ===== RESPONSIVE LAYOUT ===== */
+@media (max-width: 768px) {
+    body {
+        flex-direction: column;
+        height: 100dvh;
+        overflow: hidden;
+    }
+
+    /* Show mobile header */
+    .mobile-header { display: flex; }
+
+    /* Sidebar becomes drawer */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: -270px;
+        height: 100vh;
+        z-index: 999;
+        transition: left 0.28s ease;
+        width: 260px;
+        min-width: 260px;
+    }
+    .sidebar.open { left: 0; }
+
+    /* Show close button inside sidebar */
+    .sidebar-close-btn { display: flex; }
+
+    /* sidebar-logo relative for close btn */
+    .sidebar-logo { position: relative; padding-right: 44px; }
+
+    /* Main area fills remaining space */
+    .main-area {
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Page padding reduced */
+    .page { padding: 14px; }
+
+    /* Dashboard grid: 2 cols on mobile */
+    .dashboard-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+
+    /* Summary row: 1 col */
+    .summary-row { grid-template-columns: 1fr; gap: 10px; }
+
+    /* Split layout: 1 col */
+    .split-layout { grid-template-columns: 1fr; }
+
+    /* Input row: 1 col */
+    .input-row { grid-template-columns: 1fr; }
+
+    /* Page header */
+    .page-header { margin-bottom: 16px; }
+    .page-header h1 { font-size: 1.25em; }
+
+    /* Buttons full width in forms */
+    .section button[style*="width:100%"],
+    .section > button { font-size: 0.9em; }
+
+    /* Bigger touch targets for small buttons */
+    button.small { padding: 7px 12px; font-size: 0.8em; }
+
+    /* Table: allow horizontal scroll */
+    .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .table th, .table td { font-size: 0.8em; padding: 8px 10px; white-space: nowrap; }
+
+    /* Section padding */
+    .section { padding: 14px; }
+
+    /* Card value smaller */
+    .card-value { font-size: 1.25em; }
+
+    /* Modals: bottom sheet on mobile */
+    .modal-overlay {
+        align-items: flex-end;
+    }
+    .modal-box {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 18px 18px 0 0;
+        padding: 20px 16px 32px;
+        max-height: 92dvh;
+        overflow-y: auto;
+    }
+
+    /* Conta cards grid */
+    #contasGrid { grid-template-columns: 1fr 1fr !important; }
+}
+
+@media (max-width: 400px) {
+    .dashboard-grid { grid-template-columns: 1fr; }
+    #contasGrid { grid-template-columns: 1fr !important; }
+}
     </style>
 </head>
 <body>
 
+    <!-- ===== SIDEBAR OVERLAY (mobile) ===== -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+    <!-- ===== MOBILE HEADER ===== -->
+    <header class="mobile-header">
+        <button class="hamburger-btn" onclick="toggleSidebar()" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
+        <div class="mob-logo-badge">
+            <img src="/static/logo.png" alt="Tchê Energia">
+        </div>
+        <div>
+            <div class="mob-logo-name">Tchê Energia</div>
+            <div class="mob-logo-tagline">Gestor Financeiro</div>
+        </div>
+    </header>
+
     <!-- ===== SIDEBAR ===== -->
     <nav class="sidebar">
+        <button class="sidebar-close-btn" onclick="closeSidebar()" aria-label="Fechar menu">✕</button>
         <div class="sidebar-logo">
             <div class="logo-badge">
                 <img src="data:image/png;base64,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" width="52" height="52" style="border-radius:12px; display:block;">
@@ -1247,6 +1431,21 @@
     </div>
 
     <script>
+        // ===== SIDEBAR MOBILE =====
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('visible');
+            document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : '';
+        }
+
+        function closeSidebar() {
+            document.querySelector('.sidebar').classList.remove('open');
+            document.getElementById('sidebarOverlay').classList.remove('visible');
+            document.body.style.overflow = '';
+        }
+
         const API_BASE = '/api';
         let _categorias = [];
 
@@ -1282,6 +1481,7 @@
 
         // ==================== TAB SWITCHING ====================
         function switchTab(tabName, element) {
+            closeSidebar();
             document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-item, .nav-sub-item').forEach(el => el.classList.remove('active'));
             document.getElementById(tabName).classList.add('active');
