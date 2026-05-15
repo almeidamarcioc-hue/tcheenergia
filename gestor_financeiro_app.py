@@ -173,6 +173,14 @@ def init_db():
             cursor.execute(f"ALTER TABLE transacoes ADD COLUMN IF NOT EXISTS {col_def}")
         except Exception:
             conn.rollback()
+    try:
+        cursor.execute("ALTER TABLE perfil ADD COLUMN IF NOT EXISTS logo_base64 TEXT")
+    except Exception:
+        conn.rollback()
+    try:
+        cursor.execute("ALTER TABLE perfil ADD COLUMN IF NOT EXISTS nome_sistema TEXT DEFAULT 'Tchê Energia'")
+    except Exception:
+        conn.rollback()
 
     # Inserir categorias padrão se a tabela estiver vazia
     cursor.execute('SELECT COUNT(*) FROM categorias')
@@ -709,6 +717,33 @@ def api_perfil():
     else:
         renda = get_perfil()
         return jsonify({'renda_mensal': renda})
+
+@app.route('/api/logo', methods=['GET', 'POST'])
+def api_logo():
+    conn = get_conn()
+    cursor = conn.cursor()
+    if request.method == 'POST':
+        data = request.json
+        logo_base64 = data.get('logo_base64', '')
+        nome_sistema = data.get('nome_sistema', 'Tchê Energia')
+        cursor.execute('SELECT id FROM perfil WHERE id = 1')
+        if cursor.fetchone():
+            cursor.execute('UPDATE perfil SET logo_base64=%s, nome_sistema=%s WHERE id=1',
+                           (logo_base64, nome_sistema))
+        else:
+            cursor.execute('INSERT INTO perfil (id, renda_mensal, logo_base64, nome_sistema, data_atualizacao) VALUES (1, 0, %s, %s, %s)',
+                           (logo_base64, nome_sistema, datetime.now().isoformat()))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True})
+    else:
+        cursor.execute('SELECT logo_base64, nome_sistema FROM perfil WHERE id = 1')
+        row = cursor.fetchone()
+        conn.close()
+        return jsonify({
+            'logo_base64': row[0] if row else '',
+            'nome_sistema': row[1] if row and row[1] else 'Tchê Energia'
+        })
 
 # API - Gastos Essenciais
 @app.route('/api/gastos-essenciais', methods=['GET', 'POST', 'DELETE'])
