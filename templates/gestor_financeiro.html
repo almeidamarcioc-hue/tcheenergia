@@ -1203,6 +1203,23 @@
 
     <!-- ===== MODAL BAIXA DE DESPESA ===== -->
     <!-- ===== MODAL REMOVER EMPRÉSTIMO ===== -->
+    <!-- ===== MODAL REMOVER CATEGORIA ===== -->
+    <div class="modal-overlay" id="modalRemoverCategoria">
+        <div class="modal-box" style="width:400px;">
+            <h3>🗑️ Remover Categoria</h3>
+            <p style="font-size:0.88em;color:#666;margin:12px 0 20px;">Tem certeza que deseja remover esta categoria?</p>
+            <input type="hidden" id="remCatId">
+            <div style="display:flex;flex-direction:column;gap:10px;">
+                <button onclick="confirmarRemoverCategoria()" style="background:#ef4444;color:white;padding:12px;border-radius:8px;border:none;cursor:pointer;font-size:0.95em;font-weight:600;">
+                    🗑️ Sim, remover
+                </button>
+                <button onclick="document.getElementById('modalRemoverCategoria').classList.remove('active')" style="background:#e5e7eb;color:#374151;padding:12px;border-radius:8px;border:none;cursor:pointer;font-size:0.95em;font-weight:600;">
+                    ✕ Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="modalRemoverEmp">
         <div class="modal-box" style="width:400px;">
             <h3>🗑️ Remover Empréstimo</h3>
@@ -1614,15 +1631,19 @@
             }
             const tipoLabel = { receita:'Receitas', despesa:'Despesas', ambos:'Receitas e Despesas' };
             const tipoBadge = { receita:'badge-green', despesa:'badge-red', ambos:'badge-blue' };
-            tbody.innerHTML = _categorias.map(c => `
+            window._catMap = {};
+            tbody.innerHTML = _categorias.map(c => {
+                window._catMap[c.id] = c;
+                return `
                 <tr>
                     <td><strong>${c.nome}</strong></td>
                     <td><span class="badge ${tipoBadge[c.tipo]}">${tipoLabel[c.tipo]}</span></td>
                     <td style="white-space:nowrap;">
-                        <button class="small" style="background:#f59e0b;" onclick="abrirModalCategoria(${c.id},${JSON.stringify(c.nome)},'${c.tipo}')">Editar</button>
-                        <button class="danger small" style="margin-left:6px;" onclick="removerCategoria(${c.id})">Remover</button>
+                        <button class="small" style="background:#f59e0b;" data-id="${c.id}" onclick="abrirModalCategoria(this)">Editar</button>
+                        <button class="danger small" style="margin-left:6px;" data-id="${c.id}" onclick="removerCategoriaBtn(this)">Remover</button>
                     </td>
-                </tr>`).join('');
+                </tr>`;
+            }).join('');
         }
 
         async function adicionarCategoria() {
@@ -1634,17 +1655,25 @@
             await carregarCategoriasTabela();
         }
 
-        async function removerCategoria(id) {
-            if (confirm('Remover esta categoria?')) {
-                await fetch(`${API_BASE}/categorias`, { method:'DELETE', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ id }) });
-                await carregarCategoriasTabela();
-            }
+        async function removerCategoriaBtn(btn) {
+            const id = parseInt(btn.dataset.id);
+            document.getElementById('remCatId').value = id;
+            document.getElementById('modalRemoverCategoria').classList.add('active');
         }
 
-        function abrirModalCategoria(id, nome, tipo) {
-            document.getElementById('editCatId').value   = id;
-            document.getElementById('editCatNome').value = nome;
-            document.getElementById('editCatTipo').value = tipo;
+        async function confirmarRemoverCategoria() {
+            const id = parseInt(document.getElementById('remCatId').value);
+            document.getElementById('modalRemoverCategoria').classList.remove('active');
+            await fetch(`${API_BASE}/categorias`, { method:'DELETE', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ id }) });
+            await carregarCategoriasTabela();
+        }
+
+        function abrirModalCategoria(btn) {
+            const c = window._catMap[btn.dataset.id];
+            if (!c) return;
+            document.getElementById('editCatId').value   = c.id;
+            document.getElementById('editCatNome').value = c.nome;
+            document.getElementById('editCatTipo').value = c.tipo;
             document.getElementById('modalEditCategoria').classList.add('open');
         }
         function fecharModalCategoria() { document.getElementById('modalEditCategoria').classList.remove('open'); }
