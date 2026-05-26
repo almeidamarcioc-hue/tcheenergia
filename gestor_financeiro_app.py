@@ -1003,11 +1003,36 @@ def api_analise_emprestimo():
     analise = analisar_emprestimo()
     return jsonify(analise)
 
+# Rota de diagnóstico — acesse /api/debug para ver o erro real
+@app.route('/api/debug')
+def api_debug():
+    import traceback
+    result = {'DATABASE_URL_set': bool(os.environ.get('DATABASE_URL')), 'db_ok': False, 'error': None, 'tables': []}
+    try:
+        conn = get_conn()
+        cur = conn.cursor()
+        cur.execute("SELECT tablename FROM pg_tables WHERE schemaname='public'")
+        result['tables'] = [r[0] for r in cur.fetchall()]
+        result['db_ok'] = True
+        conn.close()
+    except Exception as e:
+        result['error'] = traceback.format_exc()
+    return jsonify(result)
+
+# Handler global de erros — retorna JSON em vez de HTML
+@app.errorhandler(500)
+def handle_500(e):
+    import traceback
+    return jsonify({'error': str(e), 'trace': traceback.format_exc()}), 500
+
 # Inicializa o banco sempre que o módulo for carregado (Vercel + local)
+_init_error = None
 try:
     init_db()
 except Exception as e:
-    print(f"[WARN] init_db falhou: {e}")
+    import traceback
+    _init_error = traceback.format_exc()
+    print(f"[WARN] init_db falhou: {_init_error}")
 
 if __name__ == '__main__':
     app.run(debug=False)
