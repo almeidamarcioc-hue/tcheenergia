@@ -181,6 +181,27 @@ def init_db():
         cursor.execute("ALTER TABLE perfil ADD COLUMN IF NOT EXISTS nome_sistema TEXT DEFAULT 'Tchê Energia'")
     except Exception:
         conn.rollback()
+    # Migration: colunas que podem faltar em bancos criados por versões anteriores
+    migrations = [
+        "ALTER TABLE contas ADD COLUMN IF NOT EXISTS saldo_inicial REAL DEFAULT 0",
+        "ALTER TABLE contas ADD COLUMN IF NOT EXISTS data_criacao TEXT",
+        "ALTER TABLE emprestimos ADD COLUMN IF NOT EXISTS grupo_recorrencia TEXT",
+        "ALTER TABLE emprestimos ADD COLUMN IF NOT EXISTS parcela_num INTEGER DEFAULT 1",
+        "ALTER TABLE emprestimos ADD COLUMN IF NOT EXISTS parcela_total INTEGER DEFAULT 1",
+        "ALTER TABLE emprestimos_recebidos ADD COLUMN IF NOT EXISTS grupo_recorrencia TEXT",
+        "ALTER TABLE emprestimos_recebidos ADD COLUMN IF NOT EXISTS parcela_num INTEGER DEFAULT 1",
+        "ALTER TABLE emprestimos_recebidos ADD COLUMN IF NOT EXISTS parcela_total INTEGER DEFAULT 1",
+        "ALTER TABLE transacoes ADD COLUMN IF NOT EXISTS recorrente INTEGER DEFAULT 0",
+        "ALTER TABLE transacoes ADD COLUMN IF NOT EXISTS meses_recorrencia INTEGER DEFAULT 0",
+        "ALTER TABLE transacoes ADD COLUMN IF NOT EXISTS hora TEXT",
+        "ALTER TABLE transacoes ADD COLUMN IF NOT EXISTS observacoes TEXT",
+        "ALTER TABLE transacoes ADD COLUMN IF NOT EXISTS data_vencimento TEXT",
+    ]
+    for sql in migrations:
+        try:
+            cursor.execute(sql)
+        except Exception:
+            conn.rollback()
 
     # Inserir categorias padrão se a tabela estiver vazia
     cursor.execute('SELECT COUNT(*) FROM categorias')
