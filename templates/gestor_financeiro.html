@@ -551,9 +551,50 @@
     .dashboard-grid { grid-template-columns: 1fr; }
     #contasGrid { grid-template-columns: 1fr !important; }
 }
+    /* ===== TOAST NOTIFICATION ===== */
+    #toast-container {
+        position: fixed;
+        bottom: 28px;
+        right: 28px;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        pointer-events: none;
+    }
+    .toast {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 20px;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: #fff;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+        min-width: 260px;
+        max-width: 380px;
+        pointer-events: all;
+        animation: toastIn 0.3s ease;
+        transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .toast.success { background: #27ae60; }
+    .toast.error   { background: #e74c3c; }
+    .toast.info    { background: #2980b9; }
+    .toast .toast-icon { font-size: 1.3rem; flex-shrink: 0; }
+    .toast.hide { opacity: 0; transform: translateX(40px); }
+    @keyframes toastIn {
+        from { opacity: 0; transform: translateX(40px); }
+        to   { opacity: 1; transform: translateX(0); }
+    }
+    @media (max-width: 768px) {
+        #toast-container { bottom: 80px; right: 12px; left: 12px; align-items: stretch; }
+        .toast { min-width: unset; }
+    }
     </style>
 </head>
 <body>
+<div id="toast-container"></div>
 
     <!-- ===== SIDEBAR OVERLAY (mobile) ===== -->
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
@@ -1500,6 +1541,20 @@
         // ==================== UTILITÁRIOS ====================
         function formatarMoeda(v) { return Number(v).toFixed(2).replace('.', ','); }
 
+        // ===== TOAST =====
+        function showToast(msg, tipo = 'success', duracao = 3500) {
+            const container = document.getElementById('toast-container');
+            const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+            const el = document.createElement('div');
+            el.className = `toast ${tipo}`;
+            el.innerHTML = `<span class="toast-icon">${icons[tipo] || '🔔'}</span><span>${msg}</span>`;
+            container.appendChild(el);
+            setTimeout(() => {
+                el.classList.add('hide');
+                setTimeout(() => el.remove(), 420);
+            }, duracao);
+        }
+
         function mesAtual() {
             const h = new Date();
             return `${h.getFullYear()}-${String(h.getMonth()+1).padStart(2,'0')}`;
@@ -1802,12 +1857,20 @@
             const recorrente = document.getElementById('recLancRecorrente').checked;
             const meses      = recorrente ? parseInt(document.getElementById('recLancMeses').value) || 0 : 0;
             const tipoVal    = document.querySelector('input[name="recTipoValor"]:checked')?.value || 'parcela';
-            if (!valorInput || valorInput <= 0) { alert('Informe um valor válido'); return; }
-            if (!data) { alert('Informe a data do recebimento'); return; }
-            if (recorrente && meses < 1) { alert('Indique por quantos meses a receita se repete'); return; }
+            if (!valorInput || valorInput <= 0) { showToast('Informe um valor válido', 'error'); return; }
+            if (!data) { showToast('Informe a data do recebimento', 'error'); return; }
+            if (recorrente && meses < 1) { showToast('Indique por quantos meses a receita se repete', 'error'); return; }
             const valor = (recorrente && tipoVal === 'total') ? valorInput / meses : valorInput;
-            await fetch(`${API_BASE}/transacoes`, { method:'POST', headers:{'Content-Type':'application/json'},
-                body: JSON.stringify({ tipo:'receita', categoria, descricao, valor, data, dataVencimento:vencimento, observacoes:obs, recorrente, meses, conta_id: conta_id ? parseInt(conta_id) : null }) });
+            try {
+                const res = await fetch(`${API_BASE}/transacoes`, { method:'POST', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({ tipo:'receita', categoria, descricao, valor, data, dataVencimento:vencimento, observacoes:obs, recorrente, meses, conta_id: conta_id ? parseInt(conta_id) : null }) });
+                if (!res.ok) throw new Error(`Erro ${res.status}`);
+                const msg = recorrente ? `Receita lançada em ${meses} parcela(s) com sucesso!` : 'Receita lançada com sucesso!';
+                showToast(msg, 'success');
+            } catch(e) {
+                showToast('Erro ao salvar receita. Tente novamente.', 'error');
+                return;
+            }
             document.getElementById('recLancDescricao').value = '';
             document.getElementById('recLancValor').value     = '';
             document.getElementById('recLancVencimento').value = '';
@@ -1917,14 +1980,21 @@
             const meses      = recorrente ? parseInt(document.getElementById('despLancMeses').value) || 0 : 0;
             const tipoVal    = document.querySelector('input[name="despTipoValor"]:checked')?.value || 'parcela';
             const obs        = document.getElementById('despLancObs').value;
-            if (!valorInput || valorInput <= 0) { alert('Informe um valor válido'); return; }
-            if (!data) { alert('Informe a data da despesa'); return; }
-            if (recorrente && meses < 1) { alert('Indique por quantos meses a despesa se repete'); return; }
-            // Calcula valor da parcela
+            if (!valorInput || valorInput <= 0) { showToast('Informe um valor válido', 'error'); return; }
+            if (!data) { showToast('Informe a data da despesa', 'error'); return; }
+            if (recorrente && meses < 1) { showToast('Indique por quantos meses a despesa se repete', 'error'); return; }
             const valor = (recorrente && tipoVal === 'total') ? valorInput / meses : valorInput;
             const conta_id_desp = document.getElementById('despLancConta').value || null;
-            await fetch(`${API_BASE}/transacoes`, { method:'POST', headers:{'Content-Type':'application/json'},
-                body: JSON.stringify({ tipo:'despesa', categoria, descricao, valor, data, dataVencimento:vencimento, observacoes:obs, recorrente, meses, conta_id: conta_id_desp ? parseInt(conta_id_desp) : null }) });
+            try {
+                const res = await fetch(`${API_BASE}/transacoes`, { method:'POST', headers:{'Content-Type':'application/json'},
+                    body: JSON.stringify({ tipo:'despesa', categoria, descricao, valor, data, dataVencimento:vencimento, observacoes:obs, recorrente, meses, conta_id: conta_id_desp ? parseInt(conta_id_desp) : null }) });
+                if (!res.ok) throw new Error(`Erro ${res.status}`);
+                const msg = recorrente ? `Despesa lançada em ${meses} parcela(s) com sucesso!` : 'Despesa lançada com sucesso!';
+                showToast(msg, 'success');
+            } catch(e) {
+                showToast('Erro ao salvar despesa. Tente novamente.', 'error');
+                return;
+            }
             document.getElementById('despLancDescricao').value  = '';
             document.getElementById('despLancValor').value      = '';
             document.getElementById('despLancVencimento').value = '';
@@ -2010,6 +2080,7 @@
                 return;
             }
             await fetch(`${API_BASE}/transacoes`, { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ id, status: novoStatus }) });
+            showToast(novoStatus === 'pago' ? 'Baixa registrada!' : 'Status atualizado!', 'success');
             if (tipo === 'receita') await carregarReceitasGrid();
             else await carregarDespesasGrid();
             carregarDashboard();
@@ -2020,8 +2091,8 @@
             const conta_id  = document.getElementById('baixaContaSelect').value;
             const data_baixa = document.getElementById('baixaDataInput').value;
             const contaGroup = document.getElementById('baixaContaGroup');
-            if (contaGroup.style.display !== 'none' && !conta_id) { alert('Selecione uma conta'); return; }
-            if (!data_baixa) { alert('Informe a data da baixa'); return; }
+            if (contaGroup.style.display !== 'none' && !conta_id) { showToast('Selecione uma conta', 'error'); return; }
+            if (!data_baixa) { showToast('Informe a data da baixa', 'error'); return; }
             const all = await fetch(`${API_BASE}/transacoes`).then(r => r.json());
             const t   = all.find(x => x.id == id);
             if (!t) return;
@@ -2032,6 +2103,7 @@
                     conta_id: conta_id ? parseInt(conta_id) : (t.conta_id || null),
                     data_baixa: data_baixa }) });
             document.getElementById('modalBaixaDespesa').classList.remove('active');
+            showToast('Baixa registrada com sucesso!', 'success');
             await carregarDespesasGrid();
             carregarDashboard();
         }
@@ -2045,6 +2117,7 @@
         async function removerLancamento(id, tipo) {
             if (confirm('Remover este lançamento?')) {
                 await fetch(`${API_BASE}/transacoes`, { method:'DELETE', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ id }) });
+                showToast('Lançamento removido.', 'info');
                 if (tipo === 'receita') await carregarReceitasGrid();
                 else await carregarDespesasGrid();
                 carregarDashboard();
@@ -2065,6 +2138,7 @@
             document.getElementById('modalRemoverSerie').classList.remove('active');
             await fetch(`${API_BASE}/transacoes`, { method:'DELETE', headers:{'Content-Type':'application/json'},
                 body: JSON.stringify({ id, escopo, grupo_recorrencia: escopo === 'grupo' ? grupo : undefined }) });
+            showToast(escopo === 'grupo' ? 'Série inteira removida.' : 'Parcela removida.', 'info');
             if (tipo === 'receita') await carregarReceitasGrid();
             else await carregarDespesasGrid();
             carregarDashboard();
