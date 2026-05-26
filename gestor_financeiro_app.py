@@ -183,20 +183,37 @@ def init_db():
         conn.rollback()
     # Migration: colunas que podem faltar em bancos criados por versões anteriores
     migrations = [
+        # contas
         "ALTER TABLE contas ADD COLUMN IF NOT EXISTS saldo_inicial REAL DEFAULT 0",
         "ALTER TABLE contas ADD COLUMN IF NOT EXISTS data_criacao TEXT",
-        "ALTER TABLE emprestimos ADD COLUMN IF NOT EXISTS grupo_recorrencia TEXT",
-        "ALTER TABLE emprestimos ADD COLUMN IF NOT EXISTS parcela_num INTEGER DEFAULT 1",
-        "ALTER TABLE emprestimos ADD COLUMN IF NOT EXISTS parcela_total INTEGER DEFAULT 1",
-        "ALTER TABLE emprestimos_recebidos ADD COLUMN IF NOT EXISTS grupo_recorrencia TEXT",
-        "ALTER TABLE emprestimos_recebidos ADD COLUMN IF NOT EXISTS parcela_num INTEGER DEFAULT 1",
-        "ALTER TABLE emprestimos_recebidos ADD COLUMN IF NOT EXISTS parcela_total INTEGER DEFAULT 1",
+        # transacoes
         "ALTER TABLE transacoes ADD COLUMN IF NOT EXISTS categoria TEXT",
         "ALTER TABLE transacoes ADD COLUMN IF NOT EXISTS recorrente INTEGER DEFAULT 0",
         "ALTER TABLE transacoes ADD COLUMN IF NOT EXISTS meses_recorrencia INTEGER DEFAULT 0",
         "ALTER TABLE transacoes ADD COLUMN IF NOT EXISTS hora TEXT",
         "ALTER TABLE transacoes ADD COLUMN IF NOT EXISTS observacoes TEXT",
         "ALTER TABLE transacoes ADD COLUMN IF NOT EXISTS data_vencimento TEXT",
+        # emprestimos (schema do guia era diferente — adiciona colunas esperadas pelo app)
+        "ALTER TABLE emprestimos ADD COLUMN IF NOT EXISTS nome TEXT",
+        "ALTER TABLE emprestimos ADD COLUMN IF NOT EXISTS valor REAL DEFAULT 0",
+        "ALTER TABLE emprestimos ADD COLUMN IF NOT EXISTS data_emprestimo TEXT",
+        "ALTER TABLE emprestimos ADD COLUMN IF NOT EXISTS data_devolucao_esperada TEXT",
+        "ALTER TABLE emprestimos ADD COLUMN IF NOT EXISTS observacoes TEXT",
+        "ALTER TABLE emprestimos ADD COLUMN IF NOT EXISTS data_criacao TEXT",
+        "ALTER TABLE emprestimos ADD COLUMN IF NOT EXISTS grupo_recorrencia TEXT",
+        "ALTER TABLE emprestimos ADD COLUMN IF NOT EXISTS parcela_num INTEGER DEFAULT 1",
+        "ALTER TABLE emprestimos ADD COLUMN IF NOT EXISTS parcela_total INTEGER DEFAULT 1",
+        # emprestimos_recebidos
+        "ALTER TABLE emprestimos_recebidos ADD COLUMN IF NOT EXISTS grupo_recorrencia TEXT",
+        "ALTER TABLE emprestimos_recebidos ADD COLUMN IF NOT EXISTS parcela_num INTEGER DEFAULT 1",
+        "ALTER TABLE emprestimos_recebidos ADD COLUMN IF NOT EXISTS parcela_total INTEGER DEFAULT 1",
+        # perfil
+        "ALTER TABLE perfil ADD COLUMN IF NOT EXISTS nome TEXT",
+        "ALTER TABLE perfil ADD COLUMN IF NOT EXISTS empresa TEXT",
+        "ALTER TABLE perfil ADD COLUMN IF NOT EXISTS email TEXT",
+        "ALTER TABLE perfil ADD COLUMN IF NOT EXISTS telefone TEXT",
+        "ALTER TABLE perfil ADD COLUMN IF NOT EXISTS renda_mensal REAL DEFAULT 0",
+        "ALTER TABLE perfil ADD COLUMN IF NOT EXISTS data_atualizacao TEXT",
     ]
     for sql in migrations:
         try:
