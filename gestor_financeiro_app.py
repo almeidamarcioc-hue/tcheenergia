@@ -1003,6 +1003,11 @@ def api_analise_emprestimo():
     analise = analisar_emprestimo()
     return jsonify(analise)
 
-if __name__ == '__main__':
+# Inicializa o banco sempre que o módulo for carregado (Vercel + local)
+try:
     init_db()
+except Exception as e:
+    print(f"[WARN] init_db falhou: {e}")
+
+if __name__ == '__main__':
     app.run(debug=False)
