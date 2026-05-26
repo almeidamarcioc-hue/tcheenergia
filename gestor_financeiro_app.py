@@ -191,6 +191,7 @@ def init_db():
         "ALTER TABLE emprestimos_recebidos ADD COLUMN IF NOT EXISTS grupo_recorrencia TEXT",
         "ALTER TABLE emprestimos_recebidos ADD COLUMN IF NOT EXISTS parcela_num INTEGER DEFAULT 1",
         "ALTER TABLE emprestimos_recebidos ADD COLUMN IF NOT EXISTS parcela_total INTEGER DEFAULT 1",
+        "ALTER TABLE transacoes ADD COLUMN IF NOT EXISTS categoria TEXT",
         "ALTER TABLE transacoes ADD COLUMN IF NOT EXISTS recorrente INTEGER DEFAULT 0",
         "ALTER TABLE transacoes ADD COLUMN IF NOT EXISTS meses_recorrencia INTEGER DEFAULT 0",
         "ALTER TABLE transacoes ADD COLUMN IF NOT EXISTS hora TEXT",
